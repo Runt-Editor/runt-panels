@@ -1,0 +1,221 @@
+<style>
+
+  body {
+    margin: 0;
+  }
+
+</style>
+
+<link rel="import" href="../core-layout/core-layout.html">
+<link rel="import" href="runt-panel.html">
+
+<polymer-element name="runt-panel-host">
+  <template>
+    <link rel="stylesheet" href="runt-panel-host.css">
+    <core-layout id="outer"></core-layout>
+
+    <div id="leftTab" core-flex-none></div>
+    <!--<content select="[left]"></content>-->
+
+    <div core-flex>
+      <core-layout id="inner" vertical></core-layout>
+
+      <content id="main" select="[main]" core-flex></content>
+    </div>
+  </template>
+
+  <script>
+    (function() {
+      function register(node, event, fn) {
+        node.addEventListener(event, fn);
+        return function() {
+          node.removeEventListener(event, fn);
+        };
+      }
+
+      function empty(node) {
+        while (node.firstChild) {
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      Polymer('runt-panel-host', {
+
+        attached: function() {
+          this.nextId = 0;
+          this.panels = {};
+          this.observer = null;
+
+          this.left = {
+            pinned: [],
+            tabbed: []
+          };
+
+          this.right = {
+            pinned: [],
+            tabbed: []
+          };
+
+          this.bottom = {
+            pinned: [],
+            tabbed: []
+          };
+
+          this.free = [];
+
+          // store reference to self
+          var self = this;
+
+          // create an observer instance
+          var observer = this.observer = new MutationObserver(function(mutations) {
+            self.async(self.update);
+          });
+
+          // configuration of the observer:
+          var config = { childList: true };
+
+          // pass in the target node, as well as the observer options
+          observer.observe(this, config);
+
+          this.update();
+        },
+
+        detatch: function() {
+          this.observer.disconnect();
+        },
+
+        update: function() {
+          var i, l, child, old;
+          var present = [];
+
+          // Discover new nodes
+          for (i = 0, l = this.children.length; i < l; i++) {
+            child = this.children[i];
+
+            if (child.tagName.toLowerCase() !== 'runt-panel') {
+              throw new Error('runt-panel-host can only host runt-panels');
+            }
+
+            if (child.host !== this) {
+              this.configure(child);
+            }
+
+            present.push(child.hostId);
+          }
+
+          // Remove old nodes
+          old = Object.getOwnPropertyNames(this.panels);
+          for (i = 0, l = old.length; i < l; i++) {
+            if (present.indexOf(old[i]) === -1) {
+              this.panels[old[i]].registrations.forEach(function(r) {
+                r();
+              });
+              delete this.panels[old[i]];
+            }
+          }
+
+          this.redrawAll();
+        },
+
+        configure: function(panel) {
+          // get fresh ID
+          var id = (this.nextId++).toString();
+
+          // set child host to self
+          panel.setHost(this, id);
+
+          // create tab div
+          var tab = document.createElement('li');
+          tab.className = 'tab';
+          var div = document.createElement('div');
+          tab.appendChild(div);
+          div.innerText = panel.title;
+
+          // store references
+          var conf = this.panels[id] = {
+            tab: tab,
+            div: div,
+            panel: panel,
+            registrations: []
+          };
+
+          // add change listeners
+          conf.registrations.push(register(panel, 'title-changed', function() {
+            conf.div.innerText = panel.title;
+          }));
+        },
+
+        redrawAll: function() {
+          var i, l, node, panel;
+
+          // Reset caches
+          this.left = {
+            pinned: [],
+            tabbed: []
+          };
+
+          this.right = {
+            pinned: [],
+            tabbed: []
+          };
+
+          this.bottom = {
+            pinned: [],
+            tabbed: []
+          };
+
+          this.free = [];
+
+          // Place panels in caches
+          for (i = 0, l = this.children.length; i < l; i++) {
+            node = this.children[i];
+            panel = this.panels[node.hostId];
+
+            if (node.hasAttribute('main')) {
+              // Main panel
+              continue;
+            }
+
+            if (node.hasAttribute('left')) {
+              if (node.hasAttribute('pinned')) {
+                this.left.pinned.push(panel);
+              } else {
+                this.left.tabbed.push(panel);
+              }
+            } else if (node.hasAttribute('right')) {
+              if (node.hasAttribute('pinned')) {
+                this.right.pinned.push(panel);
+              } else {
+                this.right.tabbed.push(panel);
+              }
+            } else if (node.hasAttribute('bottom')) {
+              if (node.hasAttribute('pinned')) {
+                this.bottom.pinned.push(panel);
+              } else {
+                this.bottom.tabbed.push(panel);
+              }
+            } else {
+              this.free.push(panel);
+            }
+          }
+
+          // Draw tabs
+          this.redrawTabs(this.left.tabbed, this.$.leftTab);
+        },
+
+        redrawTabs: function(list, node) {
+          empty(node);
+
+          if (list.length > 0) {
+            var ul = document.createElement('ul');
+            list.forEach(function(tab) {
+              ul.appendChild(tab.tab);
+            });
+
+            node.appendChild(ul);
+          }
+        }
+      });
+    })();
+  </script>
+</polymer-element>

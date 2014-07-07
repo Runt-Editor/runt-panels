@@ -1,0 +1,47 @@
+:host {
+  font-family: Arial, sans-serif;
+  height: 100vh;
+}
+
+#leftTab {
+  display: none;
+}
+
+#leftTab:not(:empty) {
+  display: block;
+  width: 30px;
+}
+
+#leftTab ul {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transform: rotate(90deg);
+  transform-origin: 15px 15px;
+  height: 30px;
+  position: absolute;
+  width: 100%;
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+#leftTab ul li {
+  display: inline-block;
+  border-bottom: 4px solid blue;
+  box-sizing: border-box;
+  height: 30px;
+  list-style: none;
+
+  margin-right: 10px;
+}
+
+#leftTab ul li div {
+  box-sizing: border-box;
+  height: 30px;
+  white-space: nowrap;
+}
