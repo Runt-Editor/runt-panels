@@ -1,0 +1,140 @@
+<link rel="import" href="../core-layout/core-layout.html">
+
+<!--
+@element runt-tab-strip
+@status alpha
+-->
+<!--
+Fired when a tab is clicked
+
+@event tab-click
+-->
+<polymer-element name="runt-tab-strip" attributes="gravity active">
+  <template>
+    <link rel="stylesheet" href="runt-tab-strip.css">
+
+    <div id="container">
+      <ul id="tabs">
+      </ul>
+    </div>
+  </template>
+
+  <script>
+    (function() {
+      function empty(node) {
+        while (node.firstChild) {
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      var nonNum = /\D/;
+      function getPixels(pxString) {
+        if (!pxString) {
+          return 0;
+        }
+
+        pxString = pxString.replace(/px$/, '');
+        if (nonNum.test(pxString)) {
+          throw new Error('string is not a pixel value string');
+        }
+
+        return parseInt(pxString);
+      }
+
+      Polymer('runt-tab-strip', {
+        gravity: 'top',
+        tabs: [],
+        active: -1,
+
+        ready: function() {
+          this._createTabs();
+          this.onMutation(this, this.childrenUpdated);
+        },
+
+        activeChanged: function() {
+          this._setActive();
+        },
+
+        gravityChanged: function() {
+          this._createTabs();
+        },
+
+        childrenUpdated: function() {
+          this._createTabs();
+          this.onMutation(this, this.childrenUpdated);
+        },
+
+        _createTabs: function() {
+          empty(this.$.tabs);
+          var width = 0;
+
+          for (var i = 0, l = this.children.length; i < l; i++) {
+            var child = this.children[i];
+            child.setAttribute('data-tab-index', i.toString());
+            var tab = document.createElement('li');
+            var content = document.createElement('content');
+            content.setAttribute('select', '[data-tab-index="' + i + '"]');
+            tab.appendChild(content);
+            this.$.tabs.appendChild(tab);
+
+            // TODO: get border and margin
+            var style = getComputedStyle(tab);
+            var margin = getPixels(style.marginLeft) +
+              getPixels(style.marginRight);
+            var border = getPixels(style.borderLeftWidth) +
+              getPixels(style.borderRightWidth);
+
+            width += tab.clientWidth + margin + border;
+
+            tab.addEventListener('click', this._tabClick.bind(this), false);
+          }
+
+          this.$.tabs.style.transform = null;
+
+          this.$.tabs.style.minWidth = width + 'px';
+          if (this.gravity === 'left' || this.gravity === 'right') {
+            this.$.container.style.minWidth = null;
+            this.$.container.style.minHeight = width + 'px';
+          } else {
+            this.$.container.style.minHeight = null;
+            this.$.container.style.minWidth = width + 'px';
+          }
+
+          if (this.children.length === 0) {
+            this.setAttribute('empty', '');
+          } else {
+            this.removeAttribute('empty');
+          }
+
+          this._setActive();
+        },
+
+        _setActive: function() {
+          for (var i = 0, l = this.children.length; i < l; i++) {
+            var className = i === this.active ? 'active' : '';
+            this.$.tabs.children[i].className = className;
+          }
+        },
+
+        _tabClick: function(event) {
+          event.preventDefault();
+          var tab = event.currentTarget;
+          var index = Array.prototype.indexOf.call(this.$.tabs.children, tab);
+          var child = this.children[index];
+          var evt = this.fire('tab-click', {
+            index: index,
+            tab: child
+          });
+
+          if (!evt.defaultPrevented) {
+            this.active = index;
+          }
+
+          if (evt.cancelBubble) {
+            event.stopPropagation();
+          }
+        }
+      });
+    })();
+  </script>
+</polymer-element>

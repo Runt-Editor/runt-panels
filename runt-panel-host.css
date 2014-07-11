@@ -1,47 +1,38 @@
 :host {
-  font-family: Arial, sans-serif;
   height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-#leftTab {
+#leftTabBar[empty],
+#bottomTabBar[empty],
+#rightTabBar[empty] {
   display: none;
 }
 
-#leftTab:not(:empty) {
-  display: block;
-  width: 30px;
+#content {
+  overflow: auto;
 }
 
-#leftTab ul {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  transform: rotate(90deg);
-  transform-origin: 15px 15px;
-  height: 30px;
+#flier {
+  display: none;
   position: absolute;
+  z-index: 3;
+  border: 2px solid #eee;
+  background-color: #fff;
+}
+
+#flier.left,
+#flier.right {
+  top: 0px;
+  bottom: 0px;
+}
+
+#flier.bottom {
   width: 100%;
-
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
 }
 
-#leftTab ul li {
-  display: inline-block;
-  border-bottom: 4px solid blue;
-  box-sizing: border-box;
-  height: 30px;
-  list-style: none;
-
-  margin-right: 10px;
-}
-
-#leftTab ul li div {
-  box-sizing: border-box;
-  height: 30px;
-  white-space: nowrap;
+#flier.left {
+  border-left-color: transparent;
+  left: 30px;
 }

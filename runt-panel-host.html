@@ -8,20 +8,36 @@
 
 <link rel="import" href="../core-layout/core-layout.html">
 <link rel="import" href="runt-panel.html">
+<link rel="import" href="runt-tab-strip.html">
+
+<!--
+@element runt-panel-host
+@status alpha
+-->
 
 <polymer-element name="runt-panel-host">
   <template>
     <link rel="stylesheet" href="runt-panel-host.css">
     <core-layout id="outer"></core-layout>
 
-    <div id="leftTab" core-flex-none></div>
-    <!--<content select="[left]"></content>-->
+    <div id="flier" core-layout>
 
+      <div id="flierHead">Title :)</div>
+      <div id="flierBody"></div>
+    </div>
+    <runt-tab-strip id="leftTabBar" gravity="left" core-flex-none on-tab-click="{{_openLeftPanel}}">
+    </runt-tab-strip>
     <div core-flex>
       <core-layout id="inner" vertical></core-layout>
 
-      <content id="main" select="[main]" core-flex></content>
+      <div core-flex id="content">
+        <content id="main" select="[main]" core-flex></content>
+      </div>
+      <runt-tab-strip id="bottomTabBar" gravity="bottom" core-flex-none>
+      </runt-tab-strip>
     </div>
+    <runt-tab-strip id="rightTabBar" gravity="right" core-flex-none>
+    </runt-tab-strip>
   </template>
 
   <script>
@@ -39,12 +55,27 @@
         }
       }
 
+      function isDescendant(parent, child) {
+        var node = child.parentNode;
+        while (node != null) {
+          if (node == parent) {
+            return true;
+          }
+
+          node = node.parentNode;
+        }
+
+        return false;
+      }
+
       Polymer('runt-panel-host', {
 
         attached: function() {
           this.nextId = 0;
           this.panels = {};
           this.observer = null;
+          this.docOnClick = register(document, 'click', this._docClick.bind(this));
+          this._open = null;
 
           this.left = {
             pinned: [],
@@ -68,7 +99,7 @@
 
           // create an observer instance
           var observer = this.observer = new MutationObserver(function(mutations) {
-            self.async(self.update);
+            self.async(self._update);
           });
 
           // configuration of the observer:
@@ -77,14 +108,15 @@
           // pass in the target node, as well as the observer options
           observer.observe(this, config);
 
-          this.update();
+          this._update();
         },
 
         detatch: function() {
           this.observer.disconnect();
+          this.docOnClick();
         },
 
-        update: function() {
+        _update: function() {
           var i, l, child, old;
           var present = [];
 
@@ -97,7 +129,7 @@
             }
 
             if (child.host !== this) {
-              this.configure(child);
+              this._configure(child);
             }
 
             present.push(child.hostId);
@@ -107,45 +139,27 @@
           old = Object.getOwnPropertyNames(this.panels);
           for (i = 0, l = old.length; i < l; i++) {
             if (present.indexOf(old[i]) === -1) {
-              this.panels[old[i]].registrations.forEach(function(r) {
-                r();
-              });
               delete this.panels[old[i]];
             }
           }
 
-          this.redrawAll();
+          this._redrawAll();
         },
 
-        configure: function(panel) {
+        _configure: function(panel) {
           // get fresh ID
           var id = (this.nextId++).toString();
 
           // set child host to self
           panel.setHost(this, id);
 
-          // create tab div
-          var tab = document.createElement('li');
-          tab.className = 'tab';
-          var div = document.createElement('div');
-          tab.appendChild(div);
-          div.innerText = panel.title;
-
           // store references
           var conf = this.panels[id] = {
-            tab: tab,
-            div: div,
-            panel: panel,
-            registrations: []
+            panel: panel
           };
-
-          // add change listeners
-          conf.registrations.push(register(panel, 'title-changed', function() {
-            conf.div.innerText = panel.title;
-          }));
         },
 
-        redrawAll: function() {
+        _redrawAll: function() {
           var i, l, node, panel;
 
           // Reset caches
@@ -199,20 +213,62 @@
             }
           }
 
-          // Draw tabs
-          this.redrawTabs(this.left.tabbed, this.$.leftTab);
+          this._redrawTabs(this.$.leftTabBar, this.left.tabbed);
+          this._redrawTabs(this.$.rightTabBar, this.right.tabbed);
+          this._redrawTabs(this.$.bottomTabBar, this.bottom.tabbed);
         },
 
-        redrawTabs: function(list, node) {
-          empty(node);
+        _redrawTabs: function(tabBar, panels) {
+          empty(tabBar);
 
-          if (list.length > 0) {
-            var ul = document.createElement('ul');
-            list.forEach(function(tab) {
-              ul.appendChild(tab.tab);
-            });
+          for (var i = 0, l = panels.length; i < l; i++) {
+            var panel = panels[i].panel;
+            var title = panel.title;
+            var span = document.createElement('span');
+            span.innerText = title;
+            tabBar.appendChild(span);
+          }
+        },
 
-            node.appendChild(ul);
+        _openLeftPanel: function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          var index = event.detail.index;
+          var panel = this.left.tabbed[index].panel;
+          var width = 400;
+          if (panel.hasAttribute('panel-tabbed-width')) {
+            width = parseInt(panel.getAttribute('panel-tabbed-width'));
+          } else {
+            panel.setAttribute('panel-tabbed-width', width.toString());
+          }
+
+          var flier = this.$.flier;
+          empty(this.$.flierBody);
+          flier.className = 'left';
+          flier.style.width = width + 'px';
+          flier.style.display = 'block';
+
+
+          var content = document.createElement('content');
+          content.setAttribute('select', '[data-panel-id="' + panel.hostId + '"]');
+          this.$.flierBody.appendChild(content);
+
+          this._open = panel;
+        },
+
+        _docClick: function(event) {
+          if (this._open !== null) {
+            // close open panel, unless click
+            // originated inside.
+            var flier = this.$.flier;
+            if (Array.prototype.some.call(event.path, function(elm) {
+              return flier === elm || isDescendant(flier, elm);
+            })) {
+              return;
+            };
+
+            flier.style.display = 'none';
           }
         }
       });

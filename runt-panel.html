@@ -8,6 +8,15 @@
 
 <link rel="import" href="../core-layout/core-layout.html">
 
+<!--
+@element runt-panel
+@status alpha
+-->
+<!--
+Fired when the title is changed
+
+@event title-changed
+-->
 <polymer-element name="runt-panel" attributes="title">
   <template>
     <link rel="stylesheet" href="runt-panel.css">
@@ -33,12 +42,8 @@
           this._hostId = -1;
         },
 
-        titleChanged: function(oldVal, newVal) {
-          console.log('title-changed: ', oldVal, newVal);
-          this.asyncFire('title-changed', {
-            oldTitle: oldVal,
-            newTitle: newVal
-          });
+        titleChanged: function() {
+          this.asyncFire('title-changed');
         },
 
         /**
@@ -49,6 +54,7 @@
         setHost: function(host, id) {
           this._host = host;
           this._hostId = id;
+          this.setAttribute('data-panel-id', id.toString());
         }
       });
     })();
