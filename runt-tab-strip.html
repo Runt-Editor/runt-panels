@@ -77,7 +77,8 @@ Fired when a tab is clicked
             tab.appendChild(content);
             this.$.tabs.appendChild(tab);
 
-            // TODO: get border and margin
+            // Calculate the actual width of the tab.
+            // Note: this ignores rotation.
             var style = getComputedStyle(tab);
             var margin = getPixels(style.marginLeft) +
               getPixels(style.marginRight);
