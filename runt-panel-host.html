@@ -20,23 +20,23 @@
     <link rel="stylesheet" href="runt-panel-host.css">
     <core-layout id="outer"></core-layout>
 
-    <div id="flier" core-layout>
-
-      <div id="flierHead">Title :)</div>
-      <div id="flierBody"></div>
-    </div>
     <runt-tab-strip id="leftTabBar" gravity="left" core-flex-none on-tab-click="{{_openLeftPanel}}">
     </runt-tab-strip>
     <div core-flex>
       <core-layout id="inner" vertical></core-layout>
 
-      <div core-flex id="content">
+      <div core-flex id="content" class="rel">
+        <div id="flier" core-layout>
+          <div id="flierHead">Title :)</div>
+          <div id="flierBody"></div>
+        </div>
+
         <content id="main" select="[main]" core-flex></content>
       </div>
-      <runt-tab-strip id="bottomTabBar" gravity="bottom" core-flex-none>
+      <runt-tab-strip id="bottomTabBar" gravity="bottom" core-flex-none on-tab-click="{{_openBottomPanel}}">
       </runt-tab-strip>
     </div>
-    <runt-tab-strip id="rightTabBar" gravity="right" core-flex-none>
+    <runt-tab-strip id="rightTabBar" gravity="right" core-flex-none on-tab-click="{{_openRightPanel}}">
     </runt-tab-strip>
   </template>
 
@@ -231,24 +231,36 @@
         },
 
         _openLeftPanel: function(event) {
+          this._openPanel(event, 'left', 'width', this.left.tabbed, 400);
+        },
+
+        _openRightPanel: function(event) {
+          this._openPanel(event, 'right', 'width', this.right.tabbed, 400);
+        },
+
+        _openBottomPanel: function(event) {
+          this._openPanel(event, 'bottom', 'height', this.bottom.tabbed, 300);
+        },
+
+        _openPanel: function(event, className, sizeParam, panels, defaultSize) {
           event.preventDefault();
           event.stopPropagation();
 
           var index = event.detail.index;
-          var panel = this.left.tabbed[index].panel;
-          var width = 400;
-          if (panel.hasAttribute('panel-tabbed-width')) {
-            width = parseInt(panel.getAttribute('panel-tabbed-width'));
+          var panel = panels[index].panel;
+          var size = defaultSize;
+          if (panel.hasAttribute('panel-tabbed-' + sizeParam)) {
+            size = parseInt(panel.getAttribute('panel-tabbed-' + sizeParam));
           } else {
-            panel.setAttribute('panel-tabbed-width', width.toString());
+            panel.setAttribute('panel-tabbed-' + sizeParam, size.toString());
           }
 
           var flier = this.$.flier;
           empty(this.$.flierBody);
-          flier.className = 'left';
-          flier.style.width = width + 'px';
+          flier.className = className;
+          flier.style.width = flier.style.height = null;
+          flier.style[sizeParam] = size + 'px';
           flier.style.display = 'block';
-
 
           var content = document.createElement('content');
           content.setAttribute('select', '[data-panel-id="' + panel.hostId + '"]');

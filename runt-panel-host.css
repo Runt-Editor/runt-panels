@@ -20,12 +20,13 @@
   z-index: 3;
   border: 2px solid #eee;
   background-color: #fff;
+  box-sizing: border-box;
 }
 
 #flier.left,
 #flier.right {
   top: 0px;
-  bottom: 0px;
+  height: 100%;
 }
 
 #flier.bottom {
@@ -34,5 +35,19 @@
 
 #flier.left {
   border-left-color: transparent;
-  left: 30px;
+  left: 0px;
+}
+
+#flier.right {
+  border-right-color: transparent;
+  right: 0px;
+}
+
+#flier.bottom {
+  border-bottom-color: transparent;
+  bottom: 0px;
+}
+
+.rel {
+  position: relative;
 }
