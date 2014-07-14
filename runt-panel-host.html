@@ -9,6 +9,7 @@
 <link rel="import" href="../core-layout/core-layout.html">
 <link rel="import" href="runt-panel.html">
 <link rel="import" href="runt-tab-strip.html">
+<link rel="import" href="../runt-icon/runt-font-icon.html">
 
 <!--
 @element runt-panel-host
@@ -18,22 +19,24 @@
 <polymer-element name="runt-panel-host">
   <template>
     <link rel="stylesheet" href="runt-panel-host.css">
-    <core-layout id="outer"></core-layout>
+    <core-layout></core-layout>
 
     <runt-tab-strip id="leftTabBar" gravity="left" core-flex-none on-tab-click="{{_openLeftPanel}}">
     </runt-tab-strip>
-    <div core-flex>
-      <core-layout id="inner" vertical></core-layout>
+    <div core-flex layout vertical>
 
-      <div core-flex id="content" class="rel">
-        <div id="flier" core-layout>
-          <div id="flierHead">Title :)</div>
-          <div id="flierBody"></div>
+      <div flex layout vertical id="content" class="rel">
+        <div id="flier" layout vertical class="panel">
+          <div id="flierHead" flex-none class="head">
+            <span id="flierTitle">Title :)</span>
+            <runt-font-icon content="\D7" style="float: right" large></runt-font-icon>
+          </div>
+          <div id="flierBody" flex class="body"></div>
         </div>
 
-        <content id="main" select="[main]" core-flex></content>
+        <content id="main" select="[main]" flex></content>
       </div>
-      <runt-tab-strip id="bottomTabBar" gravity="bottom" core-flex-none on-tab-click="{{_openBottomPanel}}">
+      <runt-tab-strip id="bottomTabBar" gravity="bottom" flex-none on-tab-click="{{_openBottomPanel}}">
       </runt-tab-strip>
     </div>
     <runt-tab-strip id="rightTabBar" gravity="right" core-flex-none on-tab-click="{{_openRightPanel}}">
@@ -248,6 +251,12 @@
 
           var index = event.detail.index;
           var panel = panels[index].panel;
+          if (panel === this._open) {
+            this.$.flier.style.display = 'none';
+            this._open = null;
+            return;
+          }
+
           var size = defaultSize;
           if (panel.hasAttribute('panel-tabbed-' + sizeParam)) {
             size = parseInt(panel.getAttribute('panel-tabbed-' + sizeParam));
@@ -257,10 +266,10 @@
 
           var flier = this.$.flier;
           empty(this.$.flierBody);
-          flier.className = className;
+          flier.className = 'panel ' + className;
           flier.style.width = flier.style.height = null;
           flier.style[sizeParam] = size + 'px';
-          flier.style.display = 'block';
+          flier.style.display = 'flex';
 
           var content = document.createElement('content');
           content.setAttribute('select', '[data-panel-id="' + panel.hostId + '"]');
